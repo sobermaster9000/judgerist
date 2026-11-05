@@ -10,7 +10,7 @@ import re
 router = APIRouter()
 
 @router.put('/users/create', response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def user_signup(user_create: UserCreate, session: db_service.SessionDependency):
+def user_create(user_create: UserCreate, session: db_service.SessionDependency):
     user_create = user_create.model_validate(user_create)
     
     user_duplicate = session.exec(select(User).where(User.email == str(user_create.email))).first()
@@ -41,11 +41,11 @@ def user_signup(user_create: UserCreate, session: db_service.SessionDependency):
         "data": user
     }
 
-@router.post('/users/login')
+@router.post('/users/get-token')
 def user_login():
     pass
 
-@router.post('/users/logout')
+@router.post('/users/invalidate-token')
 def user_logout():
     pass
 
