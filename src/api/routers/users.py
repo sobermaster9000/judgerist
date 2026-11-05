@@ -9,7 +9,7 @@ import re
 
 router = APIRouter()
 
-@router.put('/users/signup', response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.put('/users/create', response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def user_signup(user_create: UserCreate, session: db_service.SessionDependency):
     user_create = user_create.model_validate(user_create)
     
