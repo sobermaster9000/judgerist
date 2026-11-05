@@ -5,14 +5,14 @@ from contextlib import asynccontextmanager
 
 # specify which are imported in prod
 from api.schemas import *
-from api.routers import users_router, problems_router, submissions_router
+from api.routers import users_router#, problems_router, submissions_router
 from api.services import auth_service, db_service
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # startup
     print('judgerist startup')
-    # do something with db
+    db_service.init_db()
 
     yield
 
@@ -41,7 +41,7 @@ API return object format:
 
 success:
 {
-    message: '',
+    detail: '',
     result: {
 
     }
@@ -49,18 +49,16 @@ success:
 
 error:
 {
-    message: '',
-    errors: {
-
-    }
+    detail: '',
+    ...
 }
 '''
 
 # add db init / verification
 
 app.include_router(users_router, tags=['users'])
-app.include_router(problems_router, tags=['problems'])
-app.include_router(submissions_router, tags=['submissions'])
+# app.include_router(problems_router, tags=['problems'])
+# app.include_router(submissions_router, tags=['submissions'])
 
 @app.get('/')
 def root():
