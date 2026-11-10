@@ -1,16 +1,37 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 
 from sqlmodel import select
 
 from api.schemas import *
 from api.services import *
 
+from typing import Annotated
 import re
 
 router = APIRouter()
 
-@router.put('/users/create', response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def user_create(user_create: UserCreate, session: db_service.SessionDependency):
+@router.get('/users', status_code=status.HTTP_200_OK)
+def get_users(session: db_service.SessionDependency, offset: int = 0, limit: Annotated[int, Query(le=100)] = 100):
+    users = session.exec(select(User).offset(offset).limit(limit)).all()
+    return {
+        'detail': 'Successfully fetched users',
+        'data': users
+    }
+
+@router.get('/users/{id}', status_code=status.HTTP_200_OK)
+def get_user(session: db_service.SessionDependency, id: int):
+    user = session.get(User, id)
+
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
+
+    return {
+        'detail': 'User found',
+        'data': user
+    }
+
+@router.put('/users/create', status_code=status.HTTP_201_CREATED)
+def create_user(user_create: UserCreate, session: db_service.SessionDependency):
     user_create = UserCreate.model_validate(user_create)
 
     user_duplicate = session.exec(select(User).where(User.email == str(user_create.email))).first()
@@ -41,8 +62,8 @@ def user_create(user_create: UserCreate, session: db_service.SessionDependency):
         "data": user
     }
 
-@router.post('/users/update', response_model=UserResponse, status_code=status.HTTP_200_OK)
-def user_update(user_update: UserUpdate, session: db_service.SessionDependency):
+@router.post('/users/update', status_code=status.HTTP_200_OK)
+def update_user(user_update: UserUpdate, session: db_service.SessionDependency):
     user_update = UserUpdate.model_validate(user_update)
 
     user = auth_service.get_user_from_credentials(user_update, session)
@@ -52,8 +73,8 @@ def user_update(user_update: UserUpdate, session: db_service.SessionDependency):
     # postpone this feature
 
 
-@router.delete('/users/delete', response_model=UserResponse, status_code=status.HTTP_200_OK)
-def user_delete(user_login: UserLogin, session: db_service.SessionDependency):
+@router.delete('/users/delete', status_code=status.HTTP_200_OK)
+def delete_user(user_login: UserLogin, session: db_service.SessionDependency):
     user_login = UserLogin.model_validate(user_login)
 
     user = auth_service.get_user_from_credentials(user_login, session)
