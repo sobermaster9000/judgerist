@@ -9,13 +9,14 @@ from sqlmodel import select
 import jwt
 
 from api.schemas import *
+from api.config import settings
 from .db import SessionDependency
 
 TOKEN_SECURITY = HTTPBearer()
 
 def hash_password(password: str) -> str:
     salt = os.urandom(16)
-    iterations = 694200 # consider saving this as secret
+    iterations = settings.HASHING_ITERATIONS
     hash = hashlib.pbkdf2_hmac(
         'sha256',
         password.encode('utf-8'),
@@ -69,19 +70,19 @@ def get_token_from_credentials(user_login: UserLogin, session: SessionDependency
         'created_at': datetime.now(timezone.utc).timestamp()
     }
 
-    token = jwt.encode(payload, 'secret', algorithm='HS256') # load proper signature next time
+    token = jwt.encode(payload, settings.JWT_SIGNATURE, algorithm='HS256')
 
     return token
 
 def get_user_from_token(credentials: Annotated[HTTPAuthorizationCredentials, Depends(TOKEN_SECURITY)], session: SessionDependency) -> User:
     token = credentials.credentials
-    payload = jwt.decode(token, 'secret', algorithms=['HS256']) # replace with proper secret
+    payload = jwt.decode(token, settings.JWT_SIGNATURE, algorithms=['HS256']) # replace with proper secret
     email, created_at = payload.get('email'), payload.get('created_at')
 
     if not email or not created_at:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Could not validate credentials')
 
-    if datetime.now(timezone.utc) >= datetime.fromtimestamp(created_at) + timedelta(hours=24): # change timedelta
+    if datetime.now(timezone.utc) >= datetime.fromtimestamp(created_at) + timedelta(hours=settings.TOKEN_EXPIRY_HOURS):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Token is invalid')
 
     user = session.exec(select(User).where(User.email == email)).first()
