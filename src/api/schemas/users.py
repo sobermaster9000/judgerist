@@ -32,19 +32,13 @@ class UserCreate(BaseModel):
     password: str
     password_confirm: str
 
-class UserUpdate(BaseModel):
-    # for identifying user
-    username: str
-    email: EmailStr
-    password: str
-
-    # for actual update
-    username_new: str | None
-    email_new: EmailStr | None
-    password_new: str | None
-    password_new_confirm: str | None
-
 class UserLogin(BaseModel):
     username: str
     email: EmailStr
     password: str
+
+class UserUpdate(UserLogin):
+    username_new: str | None
+    email_new: EmailStr | None
+    password_new: str | None
+    password_new_confirm: str | None
