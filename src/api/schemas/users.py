@@ -17,6 +17,7 @@ class User(UserBase, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     password_hash: str
+    reject_tokens_before: datetime | None = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserPublic(UserBase):
     id: int
@@ -30,6 +31,18 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     password_confirm: str
+
+class UserUpdate(BaseModel):
+    # for identifying user
+    username: str
+    email: EmailStr
+    password: str
+
+    # for actual update
+    username_new: str | None
+    email_new: EmailStr | None
+    password_new: str | None
+    password_new_confirm: str | None
 
 class UserLogin(BaseModel):
     username: str
