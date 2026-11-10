@@ -10,7 +10,7 @@ import re
 
 router = APIRouter()
 
-@router.get('/users', status_code=status.HTTP_200_OK)
+@router.get('/users', response_model=UserListResponse, status_code=status.HTTP_200_OK)
 def get_users(session: db_service.SessionDependency, offset: int = 0, limit: Annotated[int, Query(le=100)] = 100):
     users = session.exec(select(User).offset(offset).limit(limit)).all()
     return {
@@ -18,7 +18,7 @@ def get_users(session: db_service.SessionDependency, offset: int = 0, limit: Ann
         'data': users
     }
 
-@router.get('/users/{id}', status_code=status.HTTP_200_OK)
+@router.get('/users/{id}', response_model=UserResponse, status_code=status.HTTP_200_OK)
 def get_user(session: db_service.SessionDependency, id: int):
     user = session.get(User, id)
 
@@ -30,7 +30,7 @@ def get_user(session: db_service.SessionDependency, id: int):
         'data': user
     }
 
-@router.put('/users/create', status_code=status.HTTP_201_CREATED)
+@router.put('/users/create', response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def create_user(user_create: UserCreate, session: db_service.SessionDependency):
     user_create = UserCreate.model_validate(user_create)
 
@@ -62,7 +62,7 @@ def create_user(user_create: UserCreate, session: db_service.SessionDependency):
         "data": user
     }
 
-@router.post('/users/update', status_code=status.HTTP_200_OK)
+@router.post('/users/update', response_model=UserResponse, status_code=status.HTTP_200_OK)
 def update_user(user_update: UserUpdate, session: db_service.SessionDependency):
     user_update = UserUpdate.model_validate(user_update)
 
@@ -73,7 +73,7 @@ def update_user(user_update: UserUpdate, session: db_service.SessionDependency):
     # postpone this feature
 
 
-@router.delete('/users/delete', status_code=status.HTTP_200_OK)
+@router.delete('/users/delete', response_model=UserResponse, status_code=status.HTTP_200_OK)
 def delete_user(user_login: UserLogin, session: db_service.SessionDependency):
     user_login = UserLogin.model_validate(user_login)
 

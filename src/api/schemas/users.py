@@ -22,6 +22,14 @@ class User(UserBase, table=True):
 class UserPublic(UserBase):
     id: int
 
+class UserResponse(BaseModel):
+    detail: str
+    data: UserPublic
+
+class UserListResponse(BaseModel):
+    detail: str
+    data: list[UserPublic]
+
 class UserCreate(BaseModel):
     username: str
     email: EmailStr
