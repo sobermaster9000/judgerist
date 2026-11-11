@@ -12,7 +12,12 @@ router = APIRouter()
 
 @router.get('/users', response_model=UserListResponse, status_code=status.HTTP_200_OK)
 def get_users(session: db_service.SessionDependency, offset: int = 0, limit: Annotated[int, Query(le=100)] = 100):
+    '''
+    Returns all users.
+    '''
+
     users = session.exec(select(User).offset(offset).limit(limit)).all()
+
     return {
         'detail': 'Successfully fetched users',
         'data': users
@@ -20,6 +25,10 @@ def get_users(session: db_service.SessionDependency, offset: int = 0, limit: Ann
 
 @router.get('/users/{id}', response_model=UserResponse, status_code=status.HTTP_200_OK)
 def get_user(session: db_service.SessionDependency, id: int):
+    '''
+    Returns user specified by {id}.
+    '''
+
     user = session.get(User, id)
 
     if not user:
@@ -32,6 +41,10 @@ def get_user(session: db_service.SessionDependency, id: int):
 
 @router.put('/users/create', response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def create_user(user_create: UserCreate, session: db_service.SessionDependency):
+    '''
+    Creates a user.
+    '''
+
     user_create = UserCreate.model_validate(user_create)
 
     user_duplicate = session.exec(select(User).where(User.email == str(user_create.email))).first()
@@ -64,6 +77,11 @@ def create_user(user_create: UserCreate, session: db_service.SessionDependency):
 
 @router.post('/users/update', response_model=UserResponse, status_code=status.HTTP_200_OK)
 def update_user(user_update: UserUpdate, session: db_service.SessionDependency):
+    '''
+    Authenticates as user and updates their data.
+    This feature is postponed.
+    '''
+
     user_update = UserUpdate.model_validate(user_update)
 
     user = auth_service.get_user_from_credentials(user_update, session)
@@ -74,6 +92,10 @@ def update_user(user_update: UserUpdate, session: db_service.SessionDependency):
 
 @router.delete('/users/delete', response_model=UserResponse, status_code=status.HTTP_200_OK)
 def delete_user(user_login: UserLogin, session: db_service.SessionDependency):
+    '''
+    Authenticates as user and deletes that user.
+    '''
+
     user_login = UserLogin.model_validate(user_login)
 
     user = auth_service.get_user_from_credentials(user_login, session)
