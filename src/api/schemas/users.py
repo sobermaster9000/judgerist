@@ -17,18 +17,9 @@ class User(UserBase, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     password_hash: str
-    reject_tokens_before: datetime | None = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserPublic(UserBase):
     id: int
-
-class UserResponse(BaseModel):
-    detail: str
-    data: UserPublic
-
-class UserListResponse(BaseModel):
-    detail: str
-    data: list[UserPublic]
 
 class UserCreate(BaseModel):
     username: str
@@ -46,3 +37,23 @@ class UserUpdate(UserLogin):
     email_new: EmailStr | None
     password_new: str | None
     password_new_confirm: str | None
+
+class UserTokenRequest(UserLogin):
+    req_tok_expiry_mins: int | None
+    req_tok_expiry_hours: int | None
+    req_tok_expiry_days: int | None
+
+class UserTokenDeleteRequest(UserLogin):
+    active_token: str | None
+
+class UserResponse(BaseModel):
+    detail: str
+    data: UserPublic
+
+class UserListResponse(BaseModel):
+    detail: str
+    data: list[UserPublic]
+
+class UserTokenResponse(BaseModel):
+    detail: str
+    data: str

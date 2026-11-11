@@ -36,14 +36,14 @@ def create_user(user_create: UserCreate, session: db_service.SessionDependency):
 
     user_duplicate = session.exec(select(User).where(User.email == str(user_create.email))).first()
     if user_duplicate:
-        raise HTTPException(status_code=422, detail='Email elready exists')
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail='Email elready exists')
 
     if user_create.password != user_create.password_confirm:
-        raise HTTPException(status_code=422, detail='Passwords do not match')
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail='Passwords do not match')
 
     isValidPassword = re.search("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z\\d]).{8,}$", user_create.password)
     if not isValidPassword:
-        raise HTTPException(status_code=422, detail="Password must be at least 8 characters long and have at least one of all the following: lowercase letter, uppercase letter, number, special character")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Password must be at least 8 characters long and have at least one of all the following: lowercase letter, uppercase letter, number, special character")
 
     passwordHash = auth_service.hash_password(user_create.password)
 
@@ -68,10 +68,9 @@ def update_user(user_update: UserUpdate, session: db_service.SessionDependency):
 
     user = auth_service.get_user_from_credentials(user_update, session)
     
-    ...
-
     # postpone this feature
 
+    ...
 
 @router.delete('/users/delete', response_model=UserResponse, status_code=status.HTTP_200_OK)
 def delete_user(user_login: UserLogin, session: db_service.SessionDependency):
@@ -86,3 +85,30 @@ def delete_user(user_login: UserLogin, session: db_service.SessionDependency):
         'detail': 'User successfully deleted',
         'data': user
     }
+
+@router.post('/users/token', response_model=UserTokenResponse, status_code=status.HTTP_201_CREATED)
+def get_user_token(user_token_request: UserTokenRequest, session: db_service.SessionDependency):
+    '''
+    Takes user credentials and requested token duration and returns requested token.
+    If no token duration is provided, the default token duration is used.
+    '''
+
+    user_token_request = UserTokenRequest.model_validate(user_token_request)
+
+    token = auth_service.get_token_from_credentials(user_token_request, session)
+
+    return {
+        'detail': 'Token successfully requested',
+        'data': token
+    }
+
+@router.delete('/users/token', status_code=status.HTTP_200_OK)
+def delete_user_token():
+    '''
+    If no token to delete/invalidate is provided, the most recent active one is deleted.
+    This feature is postponed.
+    '''
+
+    # postpone this feature
+
+    ...

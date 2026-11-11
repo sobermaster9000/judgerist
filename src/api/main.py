@@ -34,7 +34,7 @@ app.add_middleware(
     allow_headers=['*']
 )
 
-# add auth stuff
+# add auth_service stuff
 
 '''
 API return object format:
@@ -53,8 +53,6 @@ error:
     ...
 }
 '''
-
-# add db init / verification
 
 app.include_router(users_router, tags=['users'])
 # app.include_router(problems_router, tags=['problems'])

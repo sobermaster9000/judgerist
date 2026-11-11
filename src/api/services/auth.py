@@ -53,21 +53,41 @@ def get_user_from_credentials(user_login: UserLogin, session: SessionDependency)
 
     return user
 
-def get_token_from_credentials(user_login: UserLogin, session: SessionDependency) -> str:
-    user = session.exec(select(User).where(User.email == user_login.email)).first()
+def get_token_from_credentials(user_token_request: UserTokenRequest, session: SessionDependency) -> str:
+    user = session.exec(select(User).where(User.email == user_token_request.email)).first()
 
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Email not associated with any user')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Email not associated with any user')
 
-    if user_login.username and user_login.username != user.username:
+    if user_token_request.username and user_token_request.username != user.username:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Incorrect username')
     
-    if not is_password_match(user.password_hash, user_login.password):
+    if not is_password_match(user.password_hash, user_token_request.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password")
+
+    req_mins = user_token_request.req_tok_expiry_mins
+    req_hours = user_token_request.req_tok_expiry_hours
+    req_days = user_token_request.req_tok_expiry_days
+
+    payload = { 'email': user.email }
+
+    if not any([req_mins, req_hours, req_days]):
+        payload['expires_on'] = {
+            (datetime.now(timezone.utc) + timedelta(hours=settings.TOKEN_EXPIRY_HOURS)).timestamp()
+        }
+    else:
+        payload['expires_on'] = (datetime.now(timezone.utc) + timedelta(
+            minutes=(req_mins if req_mins else 0),
+            hours=(req_hours if req_hours else 0),
+            days=(req_days if req_days else 0)
+        )).timestamp()
 
     payload = {
         'email': user.email,
-        'created_at': datetime.now(timezone.utc).timestamp()
+        'expires_on': (datetime.now(timezone.utc) + timedelta(
+            minutes=(req_mins if req_mins else 0),
+            hours=(req_hours if req_hours else 0),
+            days=(req_days if req_days else 0))).timestamp(),
     }
 
     token = jwt.encode(payload, settings.JWT_SIGNATURE, algorithm='HS256')
@@ -76,27 +96,17 @@ def get_token_from_credentials(user_login: UserLogin, session: SessionDependency
 
 def get_user_from_token(credentials: Annotated[HTTPAuthorizationCredentials, Depends(TOKEN_SECURITY)], session: SessionDependency) -> User:
     token = credentials.credentials
-    payload = jwt.decode(token, settings.JWT_SIGNATURE, algorithms=['HS256']) # replace with proper secret
-    email, created_at = payload.get('email'), payload.get('created_at')
+    payload = jwt.decode(token, settings.JWT_SIGNATURE, algorithms=['HS256'])
+    email, expires_at = payload.get('email'), payload.get('expires_at')
 
-    if not email or not created_at:
+    if not email or not expires_at:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Could not validate credentials')
 
-    if datetime.now(timezone.utc) >= datetime.fromtimestamp(created_at) + timedelta(hours=settings.TOKEN_EXPIRY_HOURS):
+    if datetime.now(timezone.utc) >= datetime.fromtimestamp(expires_at):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Token is invalid')
 
     user = session.exec(select(User).where(User.email == email)).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Email not associated with any user')
-
-    if user.reject_tokens_before and datetime.fromtimestamp(created_at) <= user.reject_tokens_before:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Access token is invalid')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Email not associated with any user')
 
     return user
-
-def update_token_rejection_timestamp(user: User, session: SessionDependency) -> None:
-    user.reject_tokens_before = datetime.now(timezone.utc)
-
-    session.add(user)
-    session.commit()
-    session.refresh(user)
