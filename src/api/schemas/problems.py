@@ -46,3 +46,7 @@ class ProblemPublic(ProblemBase):
 class ProblemResponse(BaseModel):
     detail: str
     data: ProblemPublic
+
+class ProblemListResponse(BaseModel):
+    detail: str
+    data: list[ProblemPublic]
