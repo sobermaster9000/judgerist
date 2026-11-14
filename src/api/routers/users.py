@@ -39,7 +39,7 @@ def get_user(session: db_service.SessionDependency, id: int):
         'data': user
     }
 
-@router.put('/users/create', response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post('/users/create', response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def create_user(user_create: UserCreate, session: db_service.SessionDependency):
     '''
     Creates a user.
@@ -75,7 +75,7 @@ def create_user(user_create: UserCreate, session: db_service.SessionDependency):
         "data": user
     }
 
-@router.post('/users/update', response_model=UserResponse, status_code=status.HTTP_200_OK)
+@router.put('/users/update', response_model=UserResponse, status_code=status.HTTP_200_OK)
 def update_user(user_update: UserUpdate, session: db_service.SessionDependency):
     '''
     Authenticates as user and updates their data.
